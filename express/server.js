@@ -9,21 +9,29 @@ const axios = require('axios');
 const router = express.Router();
 router.get('/', async (req, res) => {
 
-  const instance = axios.create({
-		baseURL: 'https://developers.coinmarketcal.com/v1'
-	});
-	
-	instance.defaults.headers.common['x-api-key'] = "uNqwYyxmgg1ffxdjNmBnm2RxFLk9iiTf7LDRkZZO";
+  let count = 0;
 
-	let _response = await instance.get('/events?page=2&sortBy=created_desc&exchanges=binance&categories=8,11,14,4,1,17', {
-		timeout: 50000
-	});
+  let getNews = async () => {
 
-	console.log("_response.data.body >>", _response.data.body);
+    const instance = axios.create({
+      baseURL: 'https://developers.coinmarketcal.com/v1'
+    });
+    
+    instance.defaults.headers.common['x-api-key'] = "uNqwYyxmgg1ffxdjNmBnm2RxFLk9iiTf7LDRkZZO";
+  
+    await instance.get('/events?page=2&sortBy=created_desc&exchanges=binance&categories=8,11,14,4,1,17', {
+      timeout: 50000
+    });
 
-  console.log("buradayım >>");
+    console.log("_response.data.body >>");
+    count++;
+  }
 
-  return res.status(200).send(_response.data.body)
+  setInterval(() => {
+    if(count < 10) getNews()
+  }, 3000);
+
+  return res.status(200).send("OK")
 
 
   // res.writeHead(200, { 'Content-Type': 'text/html' });
