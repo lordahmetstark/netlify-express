@@ -7,31 +7,20 @@ const bodyParser = require('body-parser');
 const axios = require('axios');
 
 const router = express.Router();
+
 router.get('/', async (req, res) => {
 
-  let count = 0;
+  const instance = axios.create({
+		baseURL: 'https://developers.coinmarketcal.com/v1'
+	});
+	
+	instance.defaults.headers.common['x-api-key'] = "uNqwYyxmgg1ffxdjNmBnm2RxFLk9iiTf7LDRkZZO";
 
-  let getNews = async () => {
+	let _response = await instance.get('/events?page=2&sortBy=created_desc&exchanges=binance&categories=8,11,14,4,1,17', {
+		timeout: 50000
+	});
 
-    const instance = axios.create({
-      baseURL: 'https://developers.coinmarketcal.com/v1'
-    });
-    
-    instance.defaults.headers.common['x-api-key'] = "uNqwYyxmgg1ffxdjNmBnm2RxFLk9iiTf7LDRkZZO";
-  
-    await instance.get('/events?page=2&sortBy=created_desc&exchanges=binance&categories=8,11,14,4,1,17', {
-      timeout: 50000
-    });
-
-    console.log("_response.data.body >>");
-    count++;
-  }
-
-  setInterval(() => {
-    if(count < 10) getNews()
-  }, 3000);
-
-  return res.status(200).send("OK")
+  return res.status(200).send(_response.data.body)
 
 
   // res.writeHead(200, { 'Content-Type': 'text/html' });
