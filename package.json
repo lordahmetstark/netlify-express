@@ -23,7 +23,8 @@
   "homepage": "https://github.com/neverendingqs/netlify-express#readme",
   "dependencies": {
     "axios": "^0.21.1",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "node-binance-api": "^0.12.5"
   },
   "devDependencies": {
     "body-parser": "^1.19.0",
