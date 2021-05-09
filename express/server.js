@@ -86,7 +86,7 @@ app.use('/bought-coins-for-emre', async (req, res) => {
 	async function getPrice() {
 		try {
 
-      let price = await binance.prices(`${form.coin}${form.base}`);
+      let price = await binance.futuresPrices(`${form.coin}${form.base}`);
 
 			return price;
 
@@ -103,50 +103,63 @@ app.use('/bought-coins-for-emre', async (req, res) => {
   price = parseFloat(price[`${form.coin}${form.base}`])
   console.log("price >>", price)
 
+  let futuresLeverage = await binance.futuresLeverage( `${form.coin}${form.base}`, 1 );
+  console.log("futuresLeverage >>", futuresLeverage);
 
-  let balances = await binance.balance();
-  console.log("_balances[form.coin] 11 >>", balances[form.coin]);
-  let availablePrice = parseFloat(balances[form.coin].available);
-  console.log("availablePrice 11 >>", availablePrice);
+  let futuresAccount = await binance.futuresAccount()
+  let myFuture = futuresAccount.positions.find(item => item.symbol == 'LTCUSDT')
+  let myAsset = futuresAccount.assets.find(item => item.asset == 'USDT')
+  console.log("myAsset >>", myAsset);
 
-  // if(availablePrice > 0.01) {
-  //   data.message = 'Bundan zaten almışsın.'
-  //   return res.status(200).send(data)
-  // }
+  if(parseFloat(myFuture.entryPrice) > 0.01) {
+    data.message = 'Bundan zaten almışsın.'
+    return res.status(200).send(data)
+  }
 
+  if(parseFloat(myAsset.availableBalance) < form.budget) {
+    data.message = 'Hesabında para yok aq fakiri.'
+    return res.status(200).send(data)
+  }
 
-  // let myFund = parseFloat(balances[form.base].available);
-  // if(myFund < form.budget) {
-  //   data.message = 'Hesabında para yok aq fakiri.'
-  //   return res.status(200).send(data)
-  // }
+  let positionCount = 4;
+  let PositionSize = null;
 
-  let PositionSize = Math.floor(form.budget / price);
-  console.log("PositionSize >>", PositionSize);
+  let marketBuyFunc = async () => {
+    PositionSize = parseFloat((form.budget / price).toFixed(positionCount));
+    console.log("PositionSize >>", PositionSize);
 
+    let marketBuy = await binance.futuresMarketBuy(`${form.coin}${form.base}`, PositionSize )
+    console.log("marketBuy >>", marketBuy);
+
+    if(marketBuy.code == -1111) {
+      positionCount--
+      return marketBuyFunc()
+    }
+
+    return true;
+  }
+
+  await marketBuyFunc();
 
   let stopPrice = price - ((price / 100) * form.stopDistance)
   stopPrice = parseFloat(stopPrice.toFixed(4))
-  let stopPriceLimit = parseFloat((stopPrice * 0.9).toFixed(4))
   console.log("stopPrice >>", stopPrice);
-  console.log("stopPriceLimit >>", stopPriceLimit);
+
+
+  console.log("PositionSize 22 >>", PositionSize);
+  let futuresSell = await binance.futuresSell( `${form.coin}${form.base}`, PositionSize, stopPrice, {reduceOnly: true, type: 'STOP_MARKET'} )
+  console.log("futuresSell >>", futuresSell);
+
+
+
 
 
   let tpPrice = price + ((price / 100) * form.tpDistance)
   tpPrice = parseFloat(tpPrice.toFixed(4))
-  let tpPriceLimit = parseFloat((tpPrice * 0.9).toFixed(4))
   console.log("tpPrice >>", tpPrice);
-  console.log("tpPriceLimit >>", tpPriceLimit);
-
 
   // let buyProccess = await binance.marketBuy(`${form.coin}${form.base}`, PositionSize);
   // console.log("buyProccess >>", buyProccess);
-
-  let _balances = await binance.balance();
-  console.log("_balances[form.coin] 22 >>", _balances[form.coin]);
-  let availablePriceAfter = parseFloat(_balances[form.coin].available) * 0.99;
-  availablePriceAfter = parseFloat(availablePriceAfter.toFixed(2))
-  console.log("availablePriceAfter 22 >>", availablePriceAfter);
 
 
   // let tpProccess = await binance.sell(`${form.coin}${form.base}`, availablePriceAfter, tpPriceLimit, {stopPrice: tpPrice, type: "TAKE_PROFIT_LIMIT"});
@@ -157,8 +170,8 @@ app.use('/bought-coins-for-emre', async (req, res) => {
   //   // console.log("response >>", response);
   // });
 
-  let stopProccess = await binance.sell(`${form.coin}${form.base}`, availablePriceAfter, stopPriceLimit, {stopPrice: stopPrice, type: "STOP_LOSS_LIMIT"});
-  console.log("stopProccess >>", stopProccess);
+  // let stopProccess = await binance.sell(`${form.coin}${form.base}`, availablePriceAfter, stopPriceLimit, {stopPrice: stopPrice, type: "STOP_LOSS_LIMIT"});
+  // console.log("stopProccess >>", stopProccess);
 
   setTimeout(() => {
     return res.status(200).send(data)
