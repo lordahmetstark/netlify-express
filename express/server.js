@@ -12,7 +12,7 @@ const nodemailer = require("nodemailer");
 const router = express.Router();
 
 var corsOptions = {
-	origin: ["https://algotrade-client.app/home", "https://algotrade-client.app", "http://localhost:8080/", "http://localhost:8080"],
+	origin: ["https://algotrade-client.netlify.app/home", "https://algotrade-client.netlify.app", "http://localhost:8080/", "http://localhost:8080"],
   credentials: true,
 };
 
